@@ -7,8 +7,9 @@ import pathlib
 import scipy
 import matplotlib.pyplot as plt
 import datetime
+
 from callbacks import log_speed_callback
-from datasets import files_dataset
+from datasets import files_dataset, augments
 
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -31,56 +32,10 @@ num_train = tf.data.experimental.cardinality(train_list_ds).numpy()
 CLASS_NAMES = np.array([item.name for item in pathlib.Path(val_dir).glob('*')])
 STEPS_PER_EPOCH = np.ceil(num_train/BATCH_SIZE)
 
-# some image augmentations, originally from
-# https://www.wouterbulten.nl/blog/tech/data-augmentation-using-tensorflow-data-dataset/
-# but updated for tf2
+# training ugmentations
+augmentations = [augments.flip, augments.color, augments.rotate]
 
-def rotate(x: tf.Tensor, y: tf.Tensor) -> (tf.Tensor, tf.Tensor):
-    # Rotate 0, 90, 180, 270 degrees
-    rotate_amt = tf.random.uniform(shape=[], minval=0, maxval=4, dtype=tf.int32)
-    x = tf.image.rot90(x, rotate_amt)
-    return x, y
-
-def flip(x: tf.Tensor, y: tf.Tensor) -> (tf.Tensor, tf.Tensor):
-    x = tf.image.random_flip_left_right(x)
-    x = tf.image.random_flip_up_down(x)
-    return x, y
-
-# todo: look at how we're already doing this in Grant's code, match it
-def color(x: tf.Tensor, y: tf.Tensor) -> (tf.Tensor, tf.Tensor):
-    x = tf.image.random_hue(x, 0.08)
-    x = tf.image.random_saturation(x, 0.6, 1.6)
-    x = tf.image.random_brightness(x, 0.05)
-    x = tf.image.random_contrast(x, 0.7, 1.3)
-    return x, y
-
-# redo this, we just need a random crop not this zoom
-def zoom(x: tf.Tensor, y: tf.Tensor) -> (tf.Tensor, tf.Tensor):
-    # Generate 20 crop settings, ranging from a 1% to 20% crop.
-    scales = list(np.arange(0.8, 1.0, 0.01))
-    boxes = np.zeros((len(scales), 4))
-
-    for i, scale in enumerate(scales):
-        x1 = y1 = 0.5 - (0.5 * scale)
-        x2 = y2 = 0.5 + (0.5 * scale)
-        boxes[i] = [x1, y1, x2, y2]
-
-    def random_crop(img):
-        # Create different crops for an image
-        crops = tf.image.crop_and_resize([img], boxes=boxes, box_ind=np.zeros(len(scales)), crop_size=(32, 32))
-        # Return a random crop
-        return crops[tf.random.uniform(shape=[], minval=0, maxval=len(scales), dtype=tf.int32)]
-
-    choice = tf.random.uniform(shape=[], minval=0., maxval=1., dtype=tf.float32)
-
-    # Only apply cropping 50% of the time
-    x = tf.cond(choice < 0.5, lambda: x, lambda: random_crop(x))
-    return x, y
-
-# Add augmentations
-augmentations = [flip, color, rotate]
-
-
+# make datasets
 val_ds = files_dataset.dataset_from_directory(val_dir, IMG_SIZE)
 val_ds = files_dataset.prepare_dataset(
     val_ds, 
@@ -96,6 +51,7 @@ train_ds = files_dataset.prepare_dataset(
     augmentations=augmentations
 )
 
+# pull a batch from our training dataset
 image_batch, label_batch = next(iter(train_ds))
 
 # let's make our model
@@ -152,7 +108,7 @@ print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
 # https://github.com/tensorflow/tensorboard/issues/2084
 update_batch_freq = 100 * 1
 update_examples_freq = BATCH_SIZE * 100 * 1
-log_dir="../logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "-decompose_callbacks"
+log_dir="../logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "-decompose_dataset"
 tensorboard_callback = tf.keras.callbacks.TensorBoard(
     log_dir=log_dir, 
     histogram_freq=1, 
