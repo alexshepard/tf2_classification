@@ -1,11 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import pathlib
+import os
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 def dataset_from_directory(directory, IMG_SIZE):
-    glob = "{}/*/*".format(directory)
+    glob = os.path.join(*[directory, '*', '*'])
     list_ds = tf.data.Dataset.list_files(glob)
     num_examples = tf.data.experimental.cardinality(list_ds).numpy()
     CLASS_NAMES = np.array([item.name for item in pathlib.Path(directory).glob('*')])
