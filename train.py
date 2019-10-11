@@ -10,6 +10,7 @@ import datetime
 
 from callbacks import log_speed_callback
 from datasets import files_dataset, augments
+from nets import inat_inception
 
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -55,38 +56,11 @@ train_ds = files_dataset.prepare_dataset(
 image_batch, label_batch = next(iter(train_ds))
 
 # let's make our model
-
 IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
-
-# create the base model from the pre-trained model Inception V3
-base_model = tf.keras.applications.InceptionV3(
-    input_shape=IMG_SHAPE,
-    include_top=False,
-    weights='imagenet'
-)
-
-feature_batch = base_model(image_batch)
-base_model.trainable = True
-
-# add a classification head
-global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
-feature_batch_average = global_average_layer(feature_batch)
-
-prediction_layer = tf.keras.layers.Dense(len(CLASS_NAMES), activation='softmax')
-prediction_batch = prediction_layer(feature_batch_average)
-
-# append the classification head to the base model
-model = tf.keras.Sequential([
-  base_model,
-  global_average_layer,
-  prediction_layer
-])
-
-base_learning_rate = 0.0001
-model.compile(
-    optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-    loss='categorical_crossentropy',
-    metrics=['accuracy']
+model = inat_inception.compiled_model(
+    img_shape=IMG_SHAPE,
+    image_batch=image_batch,
+    num_classes=len(CLASS_NAMES)
 )
 
 epochs = 20
