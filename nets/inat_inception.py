@@ -5,28 +5,27 @@ import tensorflow as tf
 # head but this will get the dual-head factorized
 # stuff
 
-def compiled_model(img_shape, image_batch, num_classes):
+def compiled_model(img_shape, num_classes):
     base_model = tf.keras.applications.InceptionV3(
         input_shape=img_shape,
         include_top=False,
         weights='imagenet'
     )
 
-    feature_batch = base_model(image_batch)
     base_model.trainable = True
 
     # add a classification head
-    global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
-    feature_batch_average = global_average_layer(feature_batch)
-    prediction_layer = tf.keras.layers.Dense(num_classes, activation='softmax')
-    prediction_batch = prediction_layer(feature_batch_average)
-    
-    # append the classification head to the base model
-    model = tf.keras.Sequential([
-        base_model,
-        global_average_layer,
-        prediction_layer
-    ])
+    x = tf.keras.layers.GlobalAveragePooling2D(name='pool1')(base_model.output)
+    pred1 = tf.keras.layers.Dense(
+        num_classes,
+        activation='softmax',
+        name='head1'
+    )(x)
+
+    model = tf.keras.models.Model(
+        base_model.input,
+        pred1
+    )
 
     base_learning_rate = 0.0001
     model.compile(

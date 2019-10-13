@@ -156,14 +156,10 @@ def main():
         augmentations=augmentations
     )
 
-    # pull a batch from our training dataset
-    image_batch, label_batch = next(iter(train_ds))
-
     # let's make our model
     IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
     model = inat_inception.compiled_model(
         img_shape=IMG_SHAPE,
-        image_batch=image_batch,
         num_classes=len(CLASS_NAMES)
     )
 
