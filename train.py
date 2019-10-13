@@ -156,22 +156,26 @@ def main():
         augmentations=augmentations
     )
 
-    # pull a batch from our training dataset
-    image_batch, label_batch = next(iter(train_ds))
-
     # let's make our model
     IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
     model = inat_inception.compiled_model(
         img_shape=IMG_SHAPE,
-        image_batch=image_batch,
         num_classes=len(CLASS_NAMES)
     )
 
-    loss0,accuracy0 = model.evaluate(train_ds, steps = args.val_steps)
+    evaluate_output = model.evaluate(train_ds, steps = args.val_steps)
+    (loss0, head1_loss, head2_loss, head1_accuracy, head2_accuracy) = evaluate_output
 
-    print("initial loss: {:.4f}".format(loss0))
-    print("initial accuracy: {:.4f}".format(accuracy0))
+    print()
+    print("initial total loss: {:.4f}".format(loss0))
+    print("initial head1 loss: {:.4f}".format(head1_loss))
+    print("initial head2 loss: {:.4f}".format(head2_loss))
+    print()
+    print("initial head1 accuracy: {:.4f}".format(head1_accuracy))
+    print("initial head2 accuracy: {:.4f}".format(head2_accuracy))
+    print()
     print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
+    print()
 
     update_batch_freq = 100 * NUM_GPUS
     experiment_dir = "{}-{}".format(
