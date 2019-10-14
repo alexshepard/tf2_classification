@@ -10,8 +10,8 @@ def dataset_from_directory(directory, IMG_SIZE):
     list_ds = tf.data.Dataset.list_files(glob)
     num_examples = tf.data.experimental.cardinality(list_ds).numpy()
     CLASS_NAMES = np.array([item.name for item in pathlib.Path(directory).glob('*')])
-    return list_ds.map(lambda x: _process_path(x, CLASS_NAMES, IMG_SIZE), num_parallel_calls=AUTOTUNE)
-    #return list_ds.map(process_path, num_parallel_calls = AUTOTUNE)
+    ds = list_ds.map(lambda x: _process_path(x, CLASS_NAMES, IMG_SIZE), num_parallel_calls=AUTOTUNE)
+    return ds
 
 def _get_label(file_path, CLASS_NAMES):
     parts = tf.strings.split(file_path, "/")
@@ -28,7 +28,8 @@ def _process_path(file_path, CLASS_NAMES, IMG_SIZE):
     label = _get_label(file_path, CLASS_NAMES)
     img = tf.io.read_file(file_path)
     img = _decode_img(img, IMG_SIZE)
-    return img, label
+    # dual task training
+    return (img, (label, label))
 
 def prepare_dataset(ds, cache=True, batch_size=32, shuffle_buffer_size=100, augment_images=True, augmentations=[]):
     def do_image_augmentations(ds, augmentations):

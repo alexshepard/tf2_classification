@@ -163,11 +163,19 @@ def main():
         num_classes=len(CLASS_NAMES)
     )
 
-    loss0,accuracy0 = model.evaluate(train_ds, steps = args.val_steps)
+    print("evaluating model")
+    evaluate_output = model.evaluate(train_ds, steps = args.val_steps)
+    (loss0, head1_loss, head2_loss, head1_accuracy, head2_accuracy) = evaluate_output
 
-    print("initial loss: {:.4f}".format(loss0))
-    print("initial accuracy: {:.4f}".format(accuracy0))
+    print()
+    print("initial total loss: {:.4f}".format(loss0))
+    print("initial head1 loss: {:.4f}".format(head1_loss))
+    print("initial head2 loss: {:.4f}".format(head2_loss))
+    print()
+    print("initial head1 accuracy: {:.4f}".format(head1_accuracy))
+    print("initial head2 accuracy: {:.4f}".format(head2_accuracy))
     print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
+    print()
 
     update_batch_freq = 100 * NUM_GPUS
     experiment_dir = "{}-{}".format(
