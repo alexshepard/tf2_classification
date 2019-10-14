@@ -10,15 +10,15 @@ import os
 
 from callbacks import log_speed_callback
 from datasets import files_dataset, augments
-from nets import inat_inception
+from nets import inat_inception, inat_nasnet
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 print("Using tensorflow version {}".format(tf.__version__))
 
 NUM_GPUS=1
-IMG_HEIGHT = 299
-IMG_WIDTH = 299
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
 IMG_SIZE = (IMG_HEIGHT, IMG_WIDTH)
 
 def callbacks_for_training(log_dir, update_batch_freq, batch_size, steps_per_epoch, lr_scheduler_fn):
@@ -158,7 +158,7 @@ def main():
 
     # let's make our model
     IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
-    model = inat_inception.compiled_model(
+    model = inat_nasnet.compiled_model(
         img_shape=IMG_SHAPE,
         num_classes=len(CLASS_NAMES)
     )
