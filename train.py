@@ -126,6 +126,15 @@ def parse_args():
         default=100
     )
 
+    parser.add_argument(
+        '--multihead',
+        dest='multihead',
+        help='whether to do multi-head training or not',
+        required=False,
+        type=bool,
+        default=False
+    )
+
     return parser.parse_args()
 
 def main():
@@ -141,14 +150,14 @@ def main():
     augmentations = [augments.flip, augments.color, augments.rotate]
 
     # make datasets
-    val_ds = files_dataset.dataset_from_directory(args.val_dir, IMG_SIZE)
+    val_ds = files_dataset.dataset_from_directory(args.val_dir, IMG_SIZE, args.multihead)
     val_ds = files_dataset.prepare_dataset(
         val_ds, 
         cache=False, 
         augment_images=False
     )
 
-    train_ds = files_dataset.dataset_from_directory(args.train_dir, IMG_SIZE)
+    train_ds = files_dataset.dataset_from_directory(args.train_dir, IMG_SIZE, args.multihead)
     train_ds = files_dataset.prepare_dataset(
         train_ds,
         cache=False, 
@@ -160,22 +169,30 @@ def main():
     IMG_SHAPE = (IMG_HEIGHT, IMG_WIDTH, 3)
     model = inat_nasnet.compiled_model(
         img_shape=IMG_SHAPE,
-        num_classes=len(CLASS_NAMES)
+        num_classes=len(CLASS_NAMES),
+        multihead=args.multihead
     )
 
     print("evaluating model")
     evaluate_output = model.evaluate(train_ds, steps = args.val_steps)
-    (loss0, head1_loss, head2_loss, head1_accuracy, head2_accuracy) = evaluate_output
+    if args.multihead:
+        (loss0, head1_loss, head2_loss, head1_accuracy, head2_accuracy) = evaluate_output
 
-    print()
-    print("initial total loss: {:.4f}".format(loss0))
-    print("initial head1 loss: {:.4f}".format(head1_loss))
-    print("initial head2 loss: {:.4f}".format(head2_loss))
-    print()
-    print("initial head1 accuracy: {:.4f}".format(head1_accuracy))
-    print("initial head2 accuracy: {:.4f}".format(head2_accuracy))
-    print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
-    print()
+        print()
+        print("initial total loss: {:.4f}".format(loss0))
+        print("initial head1 loss: {:.4f}".format(head1_loss))
+        print("initial head2 loss: {:.4f}".format(head2_loss))
+        print()
+        print("initial head1 accuracy: {:.4f}".format(head1_accuracy))
+        print("initial head2 accuracy: {:.4f}".format(head2_accuracy))
+        print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
+        print()
+    else:
+        (loss, accuracy) = evaluate_output
+        print()
+        print("initial loss: {:.4f}".format(loss))
+        print("initial accuracy: {:.4f}".format(accuracy))
+        print("expected initial accuracy: {:.4f}".format(1/len(CLASS_NAMES)))
 
     update_batch_freq = 100 * NUM_GPUS
     experiment_dir = "{}-{}".format(
