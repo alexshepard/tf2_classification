@@ -5,12 +5,12 @@ import os
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-def dataset_from_directory(directory, IMG_SIZE, multihead):
+def dataset_from_directory(directory, IMG_SIZE):
     glob = os.path.join(*[directory, '*', '*'])
     list_ds = tf.data.Dataset.list_files(glob)
     num_examples = tf.data.experimental.cardinality(list_ds).numpy()
     CLASS_NAMES = np.array([item.name for item in pathlib.Path(directory).glob('*')])
-    ds = list_ds.map(lambda x: _process_path(x, CLASS_NAMES, IMG_SIZE, multihead), num_parallel_calls=AUTOTUNE)
+    ds = list_ds.map(lambda x: _process_path(x, CLASS_NAMES, IMG_SIZE), num_parallel_calls=AUTOTUNE)
     return ds
 
 def _get_label(file_path, CLASS_NAMES):
@@ -24,15 +24,11 @@ def _decode_img(img, IMG_SIZE):
     img = tf.image.convert_image_dtype(img, tf.float32)
     return tf.image.resize(img, IMG_SIZE)
 
-def _process_path(file_path, CLASS_NAMES, IMG_SIZE, multihead):
+def _process_path(file_path, CLASS_NAMES, IMG_SIZE):
     label = _get_label(file_path, CLASS_NAMES)
     img = tf.io.read_file(file_path)
     img = _decode_img(img, IMG_SIZE)
-    if multihead:
-        # dual task training
-        return (img, (label, label))
-    else:
-        return img, label
+    return img, label
 
 def prepare_dataset(ds, cache=True, batch_size=32, shuffle_buffer_size=100, augment_images=True, augmentations=[]):
     def do_image_augmentations(ds, augmentations):
