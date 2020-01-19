@@ -146,8 +146,8 @@ def main():
     CLASS_NAMES = np.array([item.name for item in pathlib.Path(args.val_dir).glob('*')])
     STEPS_PER_EPOCH = np.ceil(num_train/args.batch_size)
 
-    # training ugmentations
-    augmentations = [augments.flip, augments.color, augments.rotate]
+    # training augmentations
+    augmentations = [augments.flip, augments.color, augments.crop, augments.rotate]
 
     # make datasets
     val_ds = files_dataset.dataset_from_directory(args.val_dir, IMG_SIZE, args.multihead)
