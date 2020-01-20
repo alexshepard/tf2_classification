@@ -29,8 +29,11 @@ def compiled_model(img_shape, num_classes):
     )
 
     base_learning_rate = 0.0001
+
     model.compile(
-        optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+        optimizer=tf.keras.optimizers.RMSprop(
+            learning_rate=base_learning_rate
+        ),
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )

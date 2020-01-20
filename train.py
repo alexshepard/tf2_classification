@@ -21,7 +21,7 @@ IMG_HEIGHT = 299
 IMG_WIDTH = 299
 IMG_SIZE = (IMG_HEIGHT, IMG_WIDTH)
 
-def callbacks_for_training(log_dir, update_batch_freq, batch_size, steps_per_epoch, lr_scheduler_fn):
+def callbacks_for_training(log_dir, update_batch_freq, batch_size, steps_per_epoch):
     checkpoint_path = os.path.join(log_dir, "checkpoint-{epoch:02d}.hdf5")
 
     save_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -34,8 +34,6 @@ def callbacks_for_training(log_dir, update_batch_freq, batch_size, steps_per_epo
         steps_per_epoch
     )
     
-    adjust_lr_callback = tf.keras.callbacks.LearningRateScheduler(lr_scheduler_fn)
-
     # set profile_batch to 0 to workaround bug: 
     # https://github.com/tensorflow/tensorboard/issues/2084
     # tensorboar callback's update_freq is exppressed in terms
@@ -50,7 +48,6 @@ def callbacks_for_training(log_dir, update_batch_freq, batch_size, steps_per_epo
     return [ 
         save_checkpoint_callback,
         step_sec_callback,
-        adjust_lr_callback,
         tensorboard_callback
     ]
    
@@ -183,21 +180,12 @@ def main():
     file_writer = tf.summary.create_file_writer(log_dir)
     file_writer.set_as_default()
 
-    # learning rate scheduler helper function
-    def lr_scheduler(epoch):
-        # picking numbers out of a hat
-        if epoch < 1:
-            return 0.00015 
-        else:
-            return (0.0001 * tf.math.exp(0.1 * (1 - epoch))).numpy()
-
     # keras fit callbacks
     callbacks = callbacks_for_training(
         log_dir = log_dir,
         update_batch_freq = update_batch_freq,
         batch_size = args.batch_size,
-        steps_per_epoch = STEPS_PER_EPOCH,
-        lr_scheduler_fn = lr_scheduler
+        steps_per_epoch = STEPS_PER_EPOCH
     )
  
     history = model.fit(
