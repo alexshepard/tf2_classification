@@ -135,7 +135,8 @@ def main():
     STEPS_PER_EPOCH = np.ceil(num_train/args.batch_size)
 
     # training augmentations
-    augmentations = [augments.flip, augments.color, augments.crop, augments.rotate]
+    augmentations = [augments.flip, augments.color, augments.rotate]
+    #augmentations = [augments.flip, augments.color, augments.crop, augments.rotate]
 
     # make datasets
     val_ds = files_dataset.dataset_from_directory(args.val_dir, IMG_SIZE)
